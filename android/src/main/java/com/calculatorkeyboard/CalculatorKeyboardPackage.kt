@@ -12,6 +12,6 @@ class CalculatorKeyboardPackage : ReactPackage {
   }
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
-    return listOf(CalculatorKeyboardViewManager())
+    return listOf(RCTInputCalculator())
   }
 }

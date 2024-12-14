@@ -1,26 +1,44 @@
+import React from 'react';
 import {
-  requireNativeComponent,
-  UIManager,
-  Platform,
-  type ViewStyle,
+  type NativeSyntheticEvent,
+  type TextInputChangeEventData,
+  type TextInputProps,
+  type ColorValue,
+  processColor,
 } from 'react-native';
+import { requireNativeComponent, TextInput } from 'react-native';
 
-const LINKING_ERROR =
-  `The package 'react-native-calculator-keyboard' doesn't seem to be linked. Make sure: \n\n` +
-  Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
-  '- You rebuilt the app after installing the package\n' +
-  '- You are not using Expo Go\n';
+const NativeInput = requireNativeComponent<any>('RCTInputCalculator');
 
-type CalculatorKeyboardProps = {
-  color: string;
-  style: ViewStyle;
-};
+interface InputCalculatorProps extends TextInputProps {
+  text?: string | undefined;
+  keyboardColor?: ColorValue;
+}
 
-const ComponentName = 'CalculatorKeyboardView';
+const InputCalculator = React.forwardRef<TextInput, InputCalculatorProps>(
+  (props, ref) => {
+    const _onChange = (
+      event: NativeSyntheticEvent<TextInputChangeEventData>
+    ) => {
+      const currentText = event.nativeEvent.text;
+      props.onChange && props.onChange(event);
+      props.onChangeText && props.onChangeText(currentText);
+    };
 
-export const CalculatorKeyboardView =
-  UIManager.getViewManagerConfig(ComponentName) != null
-    ? requireNativeComponent<CalculatorKeyboardProps>(ComponentName)
-    : () => {
-        throw new Error(LINKING_ERROR);
-      };
+    const text = props.text || props.defaultValue || '';
+
+    return (
+      <NativeInput
+        {...props}
+        ref={ref}
+        onChange={_onChange}
+        text={text}
+        keybardColor={processColor(props.keyboardColor)}
+      />
+    );
+  }
+);
+
+export default InputCalculator;
+
+export type { InputCalculatorProps };
