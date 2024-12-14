@@ -3,7 +3,6 @@ package com.calculatorkeyboard
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.Color
-import android.text.Editable
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +18,7 @@ import com.facebook.react.views.textinput.ReactTextInputManager
 
 class RCTInputCalculator : ReactTextInputManager() {
   private var layout: ConstraintLayout? = null
+  private var keyboardView: CustomKeyboardView? = null
   private var calculatorHeight = 0
 
   override fun getName() = REACT_CLASS
@@ -28,17 +28,36 @@ class RCTInputCalculator : ReactTextInputManager() {
   }
 
   @ReactProp(name = "value")
-  fun setValue(view: ReactEditText, value: String) {
-    val cursorPosition = view.selectionStart.coerceAtLeast(0)
-    view.text = Editable.Factory.getInstance().newEditable(value)
-    view.setSelection(cursorPosition.coerceAtMost(value.length))
+  fun setValue(view: ReactEditText, value: String?) {
+    view.setText(value)
   }
 
+  @ReactProp(name = "keyboardColor")
+  fun setKeyboardColor(view: ReactEditText, color: String) {
+    keyboardView?.updateButtonColors(Color.parseColor(color))
+  }
 
   override fun createViewInstance(context: ThemedReactContext): ReactEditText {
     val editText = CalculatorEditText(context)
-    getCustomKeyboard(context, editText)
+    layout = ConstraintLayout(context)
+    keyboardView = CustomKeyboardView(context, editText)
+    keyboardView?.setBackgroundColor(Color.parseColor("#f2f2f6"))
 
+    val displayMetrics = context.currentActivity!!.resources.displayMetrics
+    val screenHeight = displayMetrics.heightPixels
+    calculatorHeight = (displayMetrics.widthPixels * 0.675).toInt()
+
+    val lParams = ConstraintLayout.LayoutParams(
+      ConstraintLayout.LayoutParams.MATCH_PARENT,
+      ConstraintLayout.LayoutParams.WRAP_CONTENT
+    ).apply {
+      height = calculatorHeight
+      bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+      setMargins(0, screenHeight - calculatorHeight, 0, 0)
+    }
+    if (context.currentActivity != null) {
+      (layout as ConstraintLayout).addView(keyboardView, lParams)
+    }
 
     editText.setOnClickListener { v: View ->
       UiThreadUtil.runOnUiThread {
@@ -52,7 +71,6 @@ class RCTInputCalculator : ReactTextInputManager() {
         }
       }
     }
-
 
     editText.onFocusListener = object : CalculatorEditText.OnFocusChangeListener {
       override fun onFocusChange(view: CalculatorEditText, hasFocus: Boolean) {
@@ -104,37 +122,6 @@ class RCTInputCalculator : ReactTextInputManager() {
         }
       }
     }
-  }
-
-
-  @SuppressLint("DiscouragedApi", "InternalInsetResource")
-  private fun getCustomKeyboard(
-    context: ThemedReactContext,
-    editText: CalculatorEditText
-  ): ConstraintLayout {
-    layout = ConstraintLayout(context)
-
-
-    val rootView = CustomKeyboardView(context, editText)
-    rootView.setBackgroundColor(Color.parseColor("#f2f2f6"))
-
-    val displayMetrics = context.currentActivity!!.resources.displayMetrics
-    val screenHeight = displayMetrics.heightPixels
-    calculatorHeight = (displayMetrics.widthPixels * 0.675).toInt()
-
-    val lParams = ConstraintLayout.LayoutParams(
-      ConstraintLayout.LayoutParams.MATCH_PARENT,
-      ConstraintLayout.LayoutParams.WRAP_CONTENT
-    ).apply {
-      height = calculatorHeight
-      bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-      setMargins(0, screenHeight - calculatorHeight, 0, 0)
-    }
-    if (context.currentActivity != null) {
-      (layout as ConstraintLayout).addView(rootView, lParams)
-    }
-
-    return layout as ConstraintLayout
   }
 
 }

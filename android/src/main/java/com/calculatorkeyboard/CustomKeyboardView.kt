@@ -3,15 +3,13 @@ package com.calculatorkeyboard
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.text.Editable
 import android.view.Gravity
 import android.widget.Button
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.ColorUtils
 import com.facebook.react.uimanager.ThemedReactContext
-import com.facebook.react.uimanager.annotations.ReactProp
-import com.facebook.react.views.textinput.ReactEditText
 import org.mariuszgromada.math.mxparser.Expression
 
 
@@ -25,7 +23,9 @@ class CustomKeyboardView(context: ThemedReactContext, private val editText: Calc
     listOf("1", "2", "3", "="),
     listOf("000", "0")
   )
+  private val specialKeys = listOf("=", "-", "×", "÷", "AC", "back", "+")
   private val separatorWidth = 8f
+  private var keyboardColor: Int = Color.parseColor("#F7ACD5")
 
   init {
     val activity = context.currentActivity as? AppCompatActivity
@@ -38,17 +38,8 @@ class CustomKeyboardView(context: ThemedReactContext, private val editText: Calc
 
   }
 
-  @ReactProp(name = "value")
-  fun setValue(view: ReactEditText, value: String) {
-    val cursorPosition = view.selectionStart.coerceAtLeast(0)
-    view.text = Editable.Factory.getInstance().newEditable(value)
-    view.setSelection(cursorPosition.coerceAtMost(value.length))
-  }
-
   private fun renderUI(buttonWidth: Float) {
-
     val buttonHeight = buttonWidth / 2
-
     var yOffset = separatorWidth
     for ((_, row) in keys.withIndex()) {
       var xOffset = separatorWidth
@@ -150,6 +141,38 @@ class CustomKeyboardView(context: ThemedReactContext, private val editText: Calc
     }
   }
 
+  fun updateButtonColors(color: Int) {
+    keyboardColor = color
+    for (i in 0 until childCount) {
+      val child = getChildAt(i)
+      if (child is Button) {
+        val key = child.text.toString()
+        if (specialKeys.contains(key)) {
+          if (key == "=") {
+            child.background = GradientDrawable().apply {
+              shape = GradientDrawable.RECTANGLE
+              cornerRadius = 24f
+              setColor(keyboardColor)
+            }
+          } else {
+            child.background = GradientDrawable().apply {
+              shape = GradientDrawable.RECTANGLE
+              cornerRadius = 24f
+              setColor(ColorUtils.setAlphaComponent(keyboardColor, 128))
+            }
+          }
+          child.setTextColor(Color.WHITE)
+        }
+      } else if (child is ImageButton) {
+        child.background = GradientDrawable().apply {
+          shape = GradientDrawable.RECTANGLE
+          cornerRadius = 24f
+          setColor(ColorUtils.setAlphaComponent(keyboardColor, 128))
+        }
+      }
+    }
+  }
+
   private fun onKeyPress(key: String) {
     when (key) {
       "AC" -> {
@@ -197,7 +220,7 @@ class CustomKeyboardView(context: ThemedReactContext, private val editText: Calc
     if (regex.matches(text)) {
       try {
         val result = eval(text).toString()
-        editText?.setTextKeepState(result)
+        editText.setTextKeepState(result)
       } catch (e: Exception) {
         e.printStackTrace()
       }
